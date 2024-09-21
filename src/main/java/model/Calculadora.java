@@ -1,33 +1,36 @@
 package model;
 
+import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.Stage;
 
-import javax.swing.*;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+public class Calculadora extends Application {
 
-public class Calculadora extends JFrame implements ActionListener {
-
-    private JTextField visor;
+    private TextField visor;
     private String operador;
     private double primeiroNumero, segundoNumero, resultado;
 
-    public Calculadora() {
-        // Configurações da janela principal
-        setTitle("Calculadora");
-        setSize(400, 500);
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLayout(new BorderLayout());
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("Calculadora");
 
-        // Visor da calculadora
-        visor = new JTextField();
-        visor.setFont(new Font("Arial", Font.PLAIN, 24));
+        // configurando o visor da calculadora
+        visor = new TextField();
         visor.setEditable(false);
-        add(visor, BorderLayout.NORTH);
+        visor.setStyle("-fx-font-size: 24; -fx-background-color: #222; -fx-text-fill: white;");
 
-        // Botões da calculadora
-        JPanel painelBotoes = new JPanel();
-        painelBotoes.setLayout(new GridLayout(5, 4, 10, 10));
+        // botoes
+        GridPane painelBotoes = new GridPane();
+        painelBotoes.setPadding(new Insets(10));
+        painelBotoes.setVgap(10);
+        painelBotoes.setHgap(10);
+        painelBotoes.setAlignment(Pos.CENTER);
 
         String[] botoes = {
                 "7", "8", "9", "/",
@@ -37,35 +40,49 @@ public class Calculadora extends JFrame implements ActionListener {
                 "√", "x²"
         };
 
+        int row = 0;
+        int col = 0;
         for (String texto : botoes) {
-            JButton botao = new JButton(texto);
-            botao.setFont(new Font("Arial", Font.PLAIN, 18));
-            botao.addActionListener(this);
-            painelBotoes.add(botao);
+            Button botao = new Button(texto);
+            botao.setStyle("-fx-font-size: 18; -fx-background-color: #222; -fx-text-fill: white;");
+            botao.setPrefSize(80, 80);
+            botao.setOnAction(e -> handleButtonAction(texto));
+            painelBotoes.add(botao, col, row);
+            col++;
+            if (col > 3) {
+                col = 0;
+                row++;
+            }
         }
 
-        add(painelBotoes, BorderLayout.CENTER);
+        // vbox para organizar os botoes na vertical e horizontal
+        VBox root = new VBox(10);
+        root.setPadding(new Insets(10));
+        root.setAlignment(Pos.CENTER);
+        root.getChildren().addAll(visor, painelBotoes);
+
+        Scene scene = new Scene(root, 400, 500);
+        primaryStage.setScene(scene);
+        primaryStage.show();
     }
 
-    @Override
-    public void actionPerformed(ActionEvent e) {
-        String comando = e.getActionCommand();
-
+    private void handleButtonAction(String texto) {
         try {
-            if (comando.charAt(0) >= '0' && comando.charAt(0) <= '9') {
-                visor.setText(visor.getText() + comando); // Adiciona números ao visor
-            } else if (comando.equals("C")) {
-                visor.setText(""); // Limpa o visor
+            if (texto.charAt(0) >= '0' && texto.charAt(0) <= '9') {
+                visor.setText(visor.getText() + texto); // adiciona os numeros digitados no visor
+            } else if (texto.equals("C")) {
+                visor.setText(""); // limpa o visor
                 primeiroNumero = segundoNumero = resultado = 0;
                 operador = "";
-            } else if (comando.equals("=")) {
+            } else if (texto.equals("=")) {
                 segundoNumero = Double.parseDouble(visor.getText());
-
-                // Realiza a operação com base no operador escolhido
                 switch (operador) {
-                    case "+": resultado = primeiroNumero + segundoNumero; break;
-                    case "-": resultado = primeiroNumero - segundoNumero; break;
-                    case "*": resultado = primeiroNumero * segundoNumero; break;
+                    case "+":
+                        resultado = primeiroNumero + segundoNumero; break;
+                    case "-":
+                        resultado = primeiroNumero - segundoNumero; break;
+                    case "*":
+                        resultado = primeiroNumero * segundoNumero; break;
                     case "/":
                         if (segundoNumero != 0) {
                             resultado = primeiroNumero / segundoNumero;
@@ -75,20 +92,19 @@ public class Calculadora extends JFrame implements ActionListener {
                         }
                         break;
                 }
-
                 visor.setText(String.valueOf(resultado));
-            } else if (comando.equals("√")) {
+            } else if (texto.equals("√")) {
                 primeiroNumero = Double.parseDouble(visor.getText());
                 resultado = Math.sqrt(primeiroNumero);
-                visor.setText(String.valueOf(resultado)); // Exibe o resultado da raiz imediatamente
-            } else if (comando.equals("x²")) {
+                visor.setText(String.valueOf(resultado));
+            } else if (texto.equals("x²")) {
                 primeiroNumero = Double.parseDouble(visor.getText());
                 resultado = Math.pow(primeiroNumero, 2);
-                visor.setText(String.valueOf(resultado)); // Exibe o resultado da potência imediatamente
-            } else { // Operações aritméticas
-                operador = comando;
+                visor.setText(String.valueOf(resultado));
+            } else { // operaçoes
+                operador = texto;
                 primeiroNumero = Double.parseDouble(visor.getText());
-                visor.setText(""); // Limpa o visor para o próximo número
+                visor.setText(""); // limpa o visor para o exibir o proximo numero
             }
         } catch (Exception ex) {
             visor.setText("Erro");
@@ -96,9 +112,6 @@ public class Calculadora extends JFrame implements ActionListener {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> {
-            Calculadora calc = new Calculadora();
-            calc.setVisible(true);
-        });
+        launch(args);
     }
 }
