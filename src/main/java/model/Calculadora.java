@@ -14,18 +14,20 @@ public class Calculadora extends Application {
 
     private TextField visor;
     private String operador;
-    private double primeiroNumero, segundoNumero, resultado;
+    private double resultado;
+    private boolean novoNumero;
+    private boolean operadorPressionado;
 
     @Override
     public void start(Stage primaryStage) {
         primaryStage.setTitle("Calculadora");
 
-        // configurando o visor da calculadora
+        // Configurando o visor da calculadora
         visor = new TextField();
         visor.setEditable(false);
         visor.setStyle("-fx-font-size: 24; -fx-background-color: #222; -fx-text-fill: white;");
 
-        // botoes
+        // Botões
         GridPane painelBotoes = new GridPane();
         painelBotoes.setPadding(new Insets(10));
         painelBotoes.setVgap(10);
@@ -37,7 +39,7 @@ public class Calculadora extends Application {
                 "4", "5", "6", "*",
                 "1", "2", "3", "-",
                 "0", "C", "=", "+",
-                "√", "x²"
+                "√", "x²", "%"
         };
 
         int row = 0;
@@ -55,7 +57,10 @@ public class Calculadora extends Application {
             }
         }
 
-        // vbox para organizar os botoes na vertical e horizontal
+        // Limpando o buffer ao iniciar a calculadora
+        limparBuffer();
+
+        // VBox para organizar os botões
         VBox root = new VBox(10);
         root.setPadding(new Insets(10));
         root.setAlignment(Pos.CENTER);
@@ -66,48 +71,82 @@ public class Calculadora extends Application {
         primaryStage.show();
     }
 
+    // Método para limpar o buffer
+    private void limparBuffer() {
+        visor.setText(""); // Limpa o visor
+        operador = ""; // Zera o operador
+        resultado = 0; // Reseta o resultado
+        novoNumero = true; // Marca que um novo número deve ser inserido
+        operadorPressionado = false; // Marca que nenhum operador foi pressionado
+    }
+
     private void handleButtonAction(String texto) {
         try {
             if (texto.charAt(0) >= '0' && texto.charAt(0) <= '9') {
-                visor.setText(visor.getText() + texto); // adiciona os numeros digitados no visor
-            } else if (texto.equals("C")) {
-                visor.setText(""); // limpa o visor
-                primeiroNumero = segundoNumero = resultado = 0;
-                operador = "";
-            } else if (texto.equals("=")) {
-                segundoNumero = Double.parseDouble(visor.getText());
-                switch (operador) {
-                    case "+":
-                        resultado = primeiroNumero + segundoNumero; break;
-                    case "-":
-                        resultado = primeiroNumero - segundoNumero; break;
-                    case "*":
-                        resultado = primeiroNumero * segundoNumero; break;
-                    case "/":
-                        if (segundoNumero != 0) {
-                            resultado = primeiroNumero / segundoNumero;
-                        } else {
-                            visor.setText("Erro");
-                            return;
-                        }
-                        break;
+                if (novoNumero) {
+                    visor.setText(""); // Limpa o visor se for um novo número
+                    novoNumero = false;
                 }
-                visor.setText(String.valueOf(resultado));
+                visor.setText(visor.getText() + texto); // Adiciona o número ao visor
+                operadorPressionado = false;
+            } else if (texto.equals("C")) {
+                limparBuffer(); // Chama o método para limpar o buffer
+            } else if (texto.equals("=")) {
+                if (!operadorPressionado && !operador.isEmpty()) {
+                    calcular(Double.parseDouble(visor.getText())); // Realiza a última operação
+                    visor.setText(String.valueOf(resultado));
+                    operador = "";
+                    novoNumero = true;
+                }
             } else if (texto.equals("√")) {
-                primeiroNumero = Double.parseDouble(visor.getText());
-                resultado = Math.sqrt(primeiroNumero);
+                resultado = Math.sqrt(Double.parseDouble(visor.getText()));
                 visor.setText(String.valueOf(resultado));
+                novoNumero = true;
             } else if (texto.equals("x²")) {
-                primeiroNumero = Double.parseDouble(visor.getText());
-                resultado = Math.pow(primeiroNumero, 2);
+                resultado = Math.pow(Double.parseDouble(visor.getText()), 2);
                 visor.setText(String.valueOf(resultado));
-            } else { // operaçoes
-                operador = texto;
-                primeiroNumero = Double.parseDouble(visor.getText());
-                visor.setText(""); // limpa o visor para o exibir o proximo numero
+                novoNumero = true;
+            } else if (texto.equals("+") || texto.equals("-") || texto.equals("*") || texto.equals("/") || texto.equals("%")) {
+                if (!operadorPressionado) {
+                    if (!operador.isEmpty()) {
+                        calcular(Double.parseDouble(visor.getText())); // Realiza a operação acumulada
+                    } else {
+                        resultado = Double.parseDouble(visor.getText()); // Armazena o primeiro número
+                    }
+                    operador = texto;
+                    novoNumero = true;
+                    operadorPressionado = true;
+                }
             }
         } catch (Exception ex) {
             visor.setText("Erro");
+            limparBuffer(); // Limpa o buffer em caso de erro
+        }
+    }
+
+    // Método de cálculo
+    private void calcular(double numero) {
+        switch (operador) {
+            case "+":
+                resultado += numero;
+                break;
+            case "-":
+                resultado -= numero;
+                break;
+            case "*":
+                resultado *= numero;
+                break;
+            case "/":
+                if (numero != 0) {
+                    resultado /= numero;
+                } else {
+                    visor.setText("Erro");
+                    limparBuffer();
+                }
+                break;
+            case "%":
+                resultado = resultado * (numero / 100); // Cálculo de porcentagem
+                break;
         }
     }
 
